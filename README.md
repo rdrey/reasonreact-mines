@@ -2,15 +2,16 @@
 
 This is a simple Minesweeper game I'm making while roughly following along [a ReasonReact tutorial](https://jaredforsyth.com/posts/a-reason-react-tutorial/). It's still very much WIP (I'm learning ReasonML & ReasonReact) and I don't recommend you copy any of my mistakes. I'll later use this to seek feedback/reviews from more experienced Reason devs.
 
-This basic version of Minesweeper now "works" at ~270 Lines of Code (wow, such compact, much expressive!), but still needs to be refactored a little.
+This basic version of Minesweeper now "works" at ~320 Lines of Code (wow, such compact, much expressive!), but still needs to be refactored a little.
 
 ## TODO
 
-* (Game) Add "shortcut" move to reveal neighbours if a numbered cell is surrounded by the correct number of flags.
-* (Meta) Modularize code properly
-* (Meta) Probably make the Board module a stateful react component handling its own events
-* (Meta) Reduce the number of mutable fields/properties in the grid
- 
+[] (Game) Better CSS / normalize
+[] (Meta) Modularize code properly
+[] (Meta) Probably make the Board module a stateful react component handling its own events
+[] (Meta) Reduce the number of mutable fields/properties in the grid
+[x] (Game) Add "shortcut" move to reveal neighbours if a numbered cell is surrounded by the correct number of flags. (+45 LoC)
+
 ## Run Project
 
 ```sh
@@ -22,11 +23,11 @@ npm run webpack
 
 After you see the webpack compilation succeed (the `npm run webpack` step), open up `build/index.html` (**no server needed!**). Then modify whichever `.re` file in `src` and refresh the page to see the changes.
 
-**For more elaborate ReasonReact examples**, please see https://github.com/reasonml-community/reason-react-example
+**For more elaborate ReasonReact examples**, please see <https://github.com/reasonml-community/reason-react-example>
 
 ## Run Project with Server
 
-To run with the webpack development server run `npm run server` and view in the browser at http://localhost:8000. Running in this environment provides hot reloading and support for routing; just edit and save the file and the browser will automatically refresh.
+To run with the webpack development server run `npm run server` and view in the browser at <http://localhost:8000.> Running in this environment provides hot reloading and support for routing; just edit and save the file and the browser will automatically refresh.
 
 Note that any hot reload on a route will fall back to the root (`/`), so `ReasonReact.Router.dangerouslyGetInitialUrl` will likely be needed alongside the `ReasonReact.Router.watchUrl` logic to handle routing correctly on hot reload refreshes or simply opening the app at a URL that is not the root.
 

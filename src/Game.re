@@ -1,12 +1,12 @@
 Random.self_init();
 
-type cell =
+type celltype =
   | Truffle
   | Count(int)
   | Empty;
 
 type boardcell = {
-  cell,
+  celltype,
   mutable revealed: bool,
   mutable flagged: bool,
   index: int,
@@ -20,6 +20,7 @@ type board = {
   width: int,
   height: int,
   mutable revealed: int,
+  triggered: bool,
   cells,
 };
 
@@ -89,11 +90,11 @@ let neighbour_truffles = (truffles, index, width, height) =>
 
 let new_cell = (index, truffles, width, height) =>
   if (IntSet.mem(index, truffles)) {
-    {cell: Truffle, revealed: false, flagged: false, index};
+    {celltype: Truffle, revealed: false, flagged: false, index};
   } else {
     let count = neighbour_truffles(truffles, index, width, height);
-    let cell = count > 0 ? Count(count) : Empty;
-    {cell, revealed: false, flagged: false, index};
+    let celltype = count > 0 ? Count(count) : Empty;
+    {celltype, revealed: false, flagged: false, index};
   };
 
 let new_board = ({width, height, truffles}) => {
@@ -103,6 +104,7 @@ let new_board = ({width, height, truffles}) => {
     width,
     height,
     revealed: 0,
+    triggered: false,
     cells:
       Array.init(height, y =>
         Array.init(width, x =>
@@ -120,7 +122,7 @@ module Cell = {
     ...component,
     render: _self =>
       switch (cell, playing) {
-      | ({cell: Truffle, flagged}, false) =>
+      | ({celltype: Truffle, flagged}, false) =>
         <button className=Styles.cell>
           {str(flagged ? {js|🚩|js} : {js|🥔|js})}
         </button>
@@ -132,9 +134,12 @@ module Cell = {
           className=Styles.cell>
           {str({flagged ? {js|🚩|js} : {js|🍀|js}})}
         </button>
-      | ({cell}, _) =>
-        <button className=Styles.cell disabled=true>
-          {switch (cell) {
+      | ({celltype, flagged}, _) =>
+        <button
+          className=Styles.cell
+          disabled={celltype == Empty}
+          onClick={_evt => flagged ? () : onClick()}>
+          {switch (celltype) {
            | Truffle => str({js|🥔|js})
            | Count(i) => str(string_of_int(i))
            | Empty => <br />
@@ -192,9 +197,12 @@ let reveal = (board: board, index) => {
   board;
 };
 
-let get_cell = (board, (y, x)) => board[y][x];
+let idx_to_cell = ({width, cells}, index) => {
+  let (y, x) = get_coords(index, width);
+  cells[y][x];
+};
 
-let flood = ({width, height, cells} as board, index) => {
+let flood = ({width, height} as board: board, index) => {
   open IntSet; // {add, is_empty, remove}
   let seen = ref(IntSet.empty);
   let tovisit = ref(IntSet.empty |> add(index));
@@ -202,12 +210,12 @@ let flood = ({width, height, cells} as board, index) => {
     let index = IntSet.min_elt(tovisit^);
     seen := add(index, seen^);
     tovisit := remove(index, tovisit^);
-    let cell = get_cell(cells, get_coords(index, width));
+    let cell = idx_to_cell(board, index);
     if (!cell.revealed) {
       cell.revealed = true;
       board.revealed = board.revealed + 1;
     };
-    if (cell.cell == Empty) {
+    if (cell.celltype == Empty) {
       neighbours(index, width, height)
       |> List.iter(i =>
            if (!IntSet.mem(i, seen^)) {
@@ -219,9 +227,50 @@ let flood = ({width, height, cells} as board, index) => {
   board;
 };
 
-let winner = ({revealed, width, height, truffles} as board) => {
-  let win = revealed == width * height - truffles;
-  win ? GameOver(true, board) : Playing(board);
+let next_game_state =
+    ({revealed, width, height, truffles, triggered} as board) => {
+  triggered
+    ? GameOver(false, board)
+    : {
+      let win = revealed == width * height - truffles;
+      // Js.log2(revealed, width * height - truffles);
+      win ? GameOver(true, board) : Playing(board);
+    };
+};
+
+let reveal_cell = (board, {index, revealed} as cell) =>
+  if (!revealed) {
+    switch (cell) {
+    | {celltype: Truffle} => {...board, triggered: true}
+    | {celltype: Count(_i)} => reveal(board, index)
+    | {celltype: Empty} => flood(board, index)
+    };
+  } else {
+    board;
+  };
+
+let reveal_neighbours = ({celltype, index}, {width, height, cells} as board) => {
+  switch (celltype) {
+  | Count(count) =>
+    let neighbours =
+      neighbours(index, width, height) |> List.map(idx_to_cell(board));
+    let flagged = neighbours |> List.filter(cell => cell.flagged);
+    if (count == List.length(flagged)) {
+      neighbours
+      |> List.fold_left(
+           (board, {flagged} as cell) =>
+             switch (flagged) {
+             | false => reveal_cell(board, cell)
+             | true => board
+             },
+           board,
+         );
+    } else {
+      board;
+    };
+  | Empty
+  | Truffle => board
+  };
 };
 
 let make = _children => {
@@ -238,14 +287,10 @@ let make = _children => {
     | (Flag(cell), _) =>
       cell.flagged = !cell.flagged;
       ReasonReact.Update(state);
-    | (DigCell({cell: Truffle}), Playing(board)) =>
-      ReasonReact.Update(GameOver(false, board))
-    | (DigCell({cell: Count(_i), index}), Playing(board)) =>
-      let board = reveal(board, index);
-      ReasonReact.Update(winner(board));
-    | (DigCell({cell: Empty, index}), Playing(board)) =>
-      let board = flood(board, index);
-      ReasonReact.Update(winner(board));
+    | (DigCell({revealed: false} as cell), Playing(board)) =>
+      ReasonReact.Update(reveal_cell(board, cell) |> next_game_state)
+    | (DigCell({revealed: true} as cell), Playing(board)) =>
+      ReasonReact.Update(reveal_neighbours(cell, board) |> next_game_state)
     | _ => ReasonReact.NoUpdate
     },
 
