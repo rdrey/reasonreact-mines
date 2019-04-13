@@ -6,11 +6,11 @@ This basic version of Minesweeper now "works" at ~320 Lines of Code (wow, such c
 
 ## TODO
 
-[] (Game) Better CSS / normalize
-[] (Meta) Modularize code properly
-[] (Meta) Probably make the Board module a stateful react component handling its own events
-[] (Meta) Reduce the number of mutable fields/properties in the grid
-[x] (Game) Add "shortcut" move to reveal neighbours if a numbered cell is surrounded by the correct number of flags. (+45 LoC)
+- [ ] (Game) Better CSS / normalize
+- [ ] (Meta) Modularize code properly
+- [ ] (Meta) Probably make the Board module a stateful react component handling its own events
+- [ ] (Meta) Reduce the number of mutable fields/properties in the grid
+- [x] (Game) Add "shortcut" move to reveal neighbours if a numbered cell is surrounded by the correct number of flags. (+45 LoC)
 
 ## Run Project
 
