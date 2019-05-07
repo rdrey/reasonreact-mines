@@ -1,7 +1,7 @@
 {
   "name": "truffle",
   "reason": {
-    "react-jsx": 2
+    "react-jsx": 3
   },
   "sources": {
     "dir": "src",
@@ -9,7 +9,7 @@
   },
   "package-specs": [
     {
-      "module": "commonjs",
+      "module": "es6",
       "in-source": true
     }
   ],
@@ -21,6 +21,7 @@
   ],
   "refmt": 3,
   "bsc-flags": [
-    "-bs-g"
+    "-bs-g",
+    "-bs-super-errors"
   ]
 }
